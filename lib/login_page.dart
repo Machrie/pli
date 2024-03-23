@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:pli/providers/google_sign_in_provider.dart';
 import 'package:pli/playlist_page.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final googleSignInProvider = Provider.of<GoogleSignInProvider>(context);
+
     return Scaffold(
       body: Center(
         child: Column(
@@ -20,17 +23,12 @@ class LoginPage extends StatelessWidget {
             // 2. 구글 로그인 버튼
             ElevatedButton(
               onPressed: () async {
-                GoogleSignIn _googleSignIn = GoogleSignIn();
-                try {
-                  await _googleSignIn.signIn();
-                  // 로그인 성공 후 페이지 이동
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => PlaylistPage()),
-                  );
-                } catch (error) {
-                  print(error);
-                }
+                await googleSignInProvider.handleSignIn();
+                // 로그인 성공 후 페이지 이동
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => PlaylistPage()),
+                );
               },
               child: Text('Sign in with Google'),
             ),
