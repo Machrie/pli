@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pli/providers/google_sign_in_provider.dart';
 import 'package:googleapis/youtube/v3.dart' as youtube;
 import 'package:http/http.dart' as http;
+import 'package:pli/ocr_page.dart';
 
 class PlaylistPage extends StatefulWidget {
   @override
@@ -14,6 +15,7 @@ class _PlaylistPageState extends State<PlaylistPage> {
   GoogleSignInAccount? _currentUser;
   List<youtube.Playlist> _playlists = [];
   String _newPlaylistTitle = '';
+  int _selectedPlaylistIndex = -1;
 
   @override
   void initState() {
@@ -41,7 +43,8 @@ class _PlaylistPageState extends State<PlaylistPage> {
 
   Future<void> _createNewPlaylist() async {
     try {
-      final GoogleSignInAccount? googleUser = Provider.of<GoogleSignInProvider>(context, listen: false).currentUser;
+      final GoogleSignInAccount? googleUser =
+          Provider.of<GoogleSignInProvider>(context, listen: false).currentUser;
       final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
 
       final http.Client client = GoogleHttpClient(googleAuth.accessToken!);
@@ -52,12 +55,48 @@ class _PlaylistPageState extends State<PlaylistPage> {
           ..title = _newPlaylistTitle
           ..description = 'A new playlist created from Flutter app');
 
-      await youtubeApi.playlists.insert(newPlaylist, ['snippet']);
+      final youtube.Playlist createdPlaylist = await youtubeApi.playlists.insert(newPlaylist, ['snippet']);
 
-      _newPlaylistTitle = '';
-      _handleSignIn(); // 재생목록 목록을 새로고침합니다.
+      setState(() {
+        _playlists.add(createdPlaylist);
+        _newPlaylistTitle = '';
+      });
     } catch (error) {
       print(error);
+    }
+  }
+
+  Future<void> _deletePlaylist(String playlistId) async {
+    try {
+      final GoogleSignInAccount? googleUser =
+          Provider.of<GoogleSignInProvider>(context, listen: false).currentUser;
+      final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
+
+      final http.Client client = GoogleHttpClient(googleAuth.accessToken!);
+      final youtube.YouTubeApi youtubeApi = youtube.YouTubeApi(client);
+
+      await youtubeApi.playlists.delete(playlistId);
+
+      setState(() {
+        _playlists.removeWhere((playlist) => playlist.id == playlistId);
+        _selectedPlaylistIndex = -1;
+      });
+    } catch (error) {
+      print(error);
+    }
+  }
+
+  void _confirmSelection() {
+    if (_selectedPlaylistIndex >= 0) {
+      final youtube.Playlist selectedPlaylist = _playlists[_selectedPlaylistIndex];
+      final String playlistId = selectedPlaylist.id!;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OCRPage(playlistId: playlistId),
+        ),
+      );
     }
   }
 
@@ -84,11 +123,14 @@ class _PlaylistPageState extends State<PlaylistPage> {
             child: Text('Create New Playlist'),
           ),
           Expanded(child: _buildPlaylistList()),
+          ElevatedButton(
+            onPressed: _selectedPlaylistIndex >= 0 ? _confirmSelection : null,
+            child: Text('Confirm Selection'),
+          ),
         ],
       ),
     );
   }
-
 
   Widget _buildPlaylistList() {
     if (_currentUser == null) {
@@ -103,6 +145,19 @@ class _PlaylistPageState extends State<PlaylistPage> {
 
         return ListTile(
           title: Text(title),
+          trailing: IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: () => _deletePlaylist(playlist.id!),
+          ),
+          leading: Radio<int>(
+            value: index,
+            groupValue: _selectedPlaylistIndex,
+            onChanged: (int? value) {
+              setState(() {
+                _selectedPlaylistIndex = value!;
+              });
+            },
+          ),
         );
       },
     );
