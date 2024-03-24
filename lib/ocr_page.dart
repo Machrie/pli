@@ -7,6 +7,7 @@ import 'package:googleapis/youtube/v3.dart' as youtube;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:pli/providers/google_sign_in_provider.dart';
+import 'api_keys.dart';
 
 class OCRPage extends StatefulWidget {
   final String playlistId;
@@ -61,7 +62,7 @@ class _OCRPageState extends State<OCRPage> {
   }
   
   Future<String> _callGoogleVisionApi(Uint8List imageData) async {
-    const String apiKey = 'AIzaSyB_8pedMX-0xzK16SWXkCH0EiVLQrRV2fs';
+    const String apiKey = apikey;
     const String apiUrl = 'https://vision.googleapis.com/v1/images:annotate?key=$apiKey';
 
     final List<int> bytes = imageData.cast<int>();
