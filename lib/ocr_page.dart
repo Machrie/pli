@@ -18,29 +18,42 @@ class OCRPage extends StatefulWidget {
 }
 
 class _OCRPageState extends State<OCRPage> {
-  Uint8List? _imageData;
+  List<Uint8List> _imageDataList = [];
   String _extractedText = '';
   List<String> _sentences = [];
 
   Future<void> _getImage() async {
     final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+    final pickedImages = await picker.pickMultiImage();
 
-    if (pickedImage != null) {
-      final imageData = await pickedImage.readAsBytes();
+    if (pickedImages != null) {
+      List<Uint8List> imageDataList = [];
+      for (var pickedImage in pickedImages) {
+        final imageData = await pickedImage.readAsBytes();
+        imageDataList.add(imageData);
+      }
       setState(() {
-        _imageData = imageData;
+        _imageDataList = imageDataList;
       });
     }
   }
 
-  Future<void> _performOCR() async {
-    if (_imageData != null) {
-      final response = await _callGoogleVisionApi(_imageData!);
-      final extractedText = _parseResponse(response);
+  void _removeImage(int index) {
+    setState(() {
+      _imageDataList.removeAt(index);
+    });
+  }
 
+  Future<void> _performOCR() async {
+    if (_imageDataList.isNotEmpty) {
+      String extractedText = '';
+      for (var imageData in _imageDataList) {
+        final response = await _callGoogleVisionApi(imageData);
+        final parsedText = _parseResponse(response);
+        extractedText += parsedText + '\n';
+      }
       setState(() {
-        _extractedText = extractedText;
+        _extractedText = extractedText.trim();
       });
     }
   }
@@ -210,11 +223,28 @@ class _OCRPageState extends State<OCRPage> {
             onPressed: _getImage,
             child: Text('Upload Image'),
           ),
-          if (_imageData != null)
+          if (_imageDataList.isNotEmpty)
             Expanded(
-              child: Image.memory(
-                _imageData!,
-                fit: BoxFit.contain,
+              child: ListView.builder(
+                itemCount: _imageDataList.length,
+                itemBuilder: (context, index) {
+                  return Stack(
+                    children: [
+                      Image.memory(
+                        _imageDataList[index],
+                        fit: BoxFit.contain,
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: IconButton(
+                          icon: Icon(Icons.remove_circle),
+                          onPressed: () => _removeImage(index),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ElevatedButton(
