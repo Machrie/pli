@@ -46,18 +46,20 @@ class _OCRPageState extends State<OCRPage> {
 
   Future<void> _performOCR() async {
     if (_imageDataList.isNotEmpty) {
-      String extractedText = '';
+      List<String> allSentences = [];
       for (var imageData in _imageDataList) {
         final response = await _callGoogleVisionApi(imageData);
         final parsedText = _parseResponse(response);
-        extractedText += parsedText + '\n';
+        final sentences = parsedText.split('\n');
+        allSentences.addAll(sentences);
       }
       setState(() {
-        _extractedText = extractedText.trim();
+        _sentences = allSentences;
+        _extractedText = allSentences.join('\n');
       });
     }
   }
-
+  
   Future<String> _callGoogleVisionApi(Uint8List imageData) async {
     const String apiKey = 'AIzaSyB_8pedMX-0xzK16SWXkCH0EiVLQrRV2fs';
     const String apiUrl = 'https://vision.googleapis.com/v1/images:annotate?key=$apiKey';
@@ -92,6 +94,7 @@ class _OCRPageState extends State<OCRPage> {
       throw 'Could not launch $playlistUrl';
     }
   }
+
   Future<void> _addVideosToPlaylist() async {
     final googleSignInProvider = Provider.of<GoogleSignInProvider>(context, listen: false);
     final googleSignIn = googleSignInProvider.googleSignIn;
@@ -107,7 +110,36 @@ class _OCRPageState extends State<OCRPage> {
 
     List<String> addedVideoIds = [];
 
-    for (String sentence in _sentences) {
+    void showProgressDialog() {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return AlertDialog(
+                title: Text('재생목록에 추가 중...'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('동영상을 재생목록에 추가하고 있습니다...'),
+                    SizedBox(height: 8),
+                    Text('${addedVideoIds.length} / ${_sentences.length}'),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    }
+
+    showProgressDialog();
+
+    for (int i = 0; i < _sentences.length; i++) {
+      String sentence = _sentences[i];
       final searchResponse = await youtubeApi.search.list(
         ['snippet'],
         q: sentence,
@@ -131,8 +163,14 @@ class _OCRPageState extends State<OCRPage> {
           ['snippet'],
         );
         addedVideoIds.add(videoId);
+
+        // 진행 상황 업데이트
+        Navigator.of(context).pop();
+        showProgressDialog();
       }
     }
+
+    Navigator.of(context).pop();
 
     if (addedVideoIds.isNotEmpty) {
       await showDialog(
@@ -224,7 +262,8 @@ class _OCRPageState extends State<OCRPage> {
             child: Text('Upload Image'),
           ),
           if (_imageDataList.isNotEmpty)
-            Expanded(
+            SizedBox(
+              height: 200,
               child: ListView.builder(
                 itemCount: _imageDataList.length,
                 itemBuilder: (context, index) {
@@ -251,8 +290,14 @@ class _OCRPageState extends State<OCRPage> {
             onPressed: _performOCR,
             child: Text('Perform OCR'),
           ),
-          Text('Extracted Text:'),
-          Text(_extractedText),
+          Expanded(
+            child: ListView(
+              children: [
+                Text('Extracted Text:'),
+                Text(_extractedText),
+              ],
+            ),
+          ),
           ElevatedButton(
             onPressed: _sentences.isNotEmpty ? _addVideosToPlaylist : null,
             child: Text('자동으로 재생목록에 추가하기'),

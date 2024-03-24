@@ -86,7 +86,7 @@ class _PlaylistPageState extends State<PlaylistPage> {
     }
   }
 
-  void _confirmSelection() {
+  void _navigateToOCRPage() {
     if (_selectedPlaylistIndex >= 0) {
       final youtube.Playlist selectedPlaylist = _playlists[_selectedPlaylistIndex];
       final String playlistId = selectedPlaylist.id!;
@@ -98,6 +98,11 @@ class _PlaylistPageState extends State<PlaylistPage> {
         ),
       );
     }
+  }
+
+  void _addTextToPlaylist() {
+    // TODO: Implement adding text to playlist
+    print('Adding text to playlist');
   }
 
   @override
@@ -123,9 +128,18 @@ class _PlaylistPageState extends State<PlaylistPage> {
             child: Text('Create New Playlist'),
           ),
           Expanded(child: _buildPlaylistList()),
-          ElevatedButton(
-            onPressed: _selectedPlaylistIndex >= 0 ? _confirmSelection : null,
-            child: Text('Confirm Selection'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: _selectedPlaylistIndex >= 0 ? _navigateToOCRPage : null,
+                child: Text('Add Image to Playlist'),
+              ),
+              ElevatedButton(
+                onPressed: _selectedPlaylistIndex >= 0 ? _addTextToPlaylist : null,
+                child: Text('Add Text to Playlist'),
+              ),
+            ],
           ),
         ],
       ),
