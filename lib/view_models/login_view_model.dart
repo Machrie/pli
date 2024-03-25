@@ -1,4 +1,3 @@
-// login_view_model.dart
 import 'package:flutter/material.dart';
 import 'package:pli/providers/google_sign_in_provider.dart';
 import 'package:pli/views/select_playlist.dart';
@@ -16,4 +15,4 @@ class LoginViewModel extends ChangeNotifier {
       MaterialPageRoute(builder: (context) => PlaylistPage()),
     );
   }
-}
+} 

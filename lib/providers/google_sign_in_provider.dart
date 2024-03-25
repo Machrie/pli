@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:pli/services/google_sign_in_service.dart';
 
-
 class GoogleSignInProvider with ChangeNotifier {
   final GoogleSignInService _googleSignInService = GoogleSignInService();
 

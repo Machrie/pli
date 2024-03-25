@@ -44,7 +44,8 @@ class OCRViewModel extends ChangeNotifier {
     }
   }
 
-  Future<List<String>> addVideosToPlaylist(String playlistId, Function(int) onProgress) async {
+  Future<List<String>> addVideosToPlaylist(
+      String playlistId, Function(int) onProgress) async {
     if (!_googleSignInProvider.isSignedIn) {
       await _googleSignInProvider.handleSignIn();
     }
@@ -53,51 +54,36 @@ class OCRViewModel extends ChangeNotifier {
     final GoogleHttpClient httpClient = GoogleHttpClient(accessToken);
     final youtube.YouTubeApi youtubeApi = youtube.YouTubeApi(httpClient);
 
-    final List<Map<String, dynamic>> searchRequests = _sentences.map((sentence) {
-      return {
-        'q': sentence,
-        'type': 'video',
-        'videoCategoryId': '10',
-        'maxResults': 1,
-      };
-    }).toList();
-
-    final List<youtube.SearchResult> searchResults = [];
-
-    for (final searchRequest in searchRequests) {
-      final youtube.SearchListResponse searchResponse = await youtubeApi.search.list(
-        ['snippet'],
-        q: searchRequest['q'],
-        type: searchRequest['type'],
-        videoCategoryId: searchRequest['videoCategoryId'],
-        maxResults: searchRequest['maxResults'],
-      );
-
-      if (searchResponse.items != null && searchResponse.items!.isNotEmpty) {
-        searchResults.add(searchResponse.items![0]);
-      }
-    }
-
     List<String> addedVideoIds = [];
 
-    for (int i = 0; i < searchResults.length; i++) {
-      final youtube.SearchResult searchResult = searchResults[i];
-      final String videoId = searchResult.id!.videoId!;
+    for (int i = 0; i < _sentences.length; i++) {
+      String sentence = _sentences[i];
+      final searchResponse = await youtubeApi.search.list(
+        ['snippet'],
+        q: sentence,
+        type: ['video'],
+        videoCategoryId: '10',
+        maxResults: 1,
+      );
 
       try {
-        await youtubeApi.playlistItems.insert(
-          youtube.PlaylistItem(
-            snippet: youtube.PlaylistItemSnippet(
-              playlistId: playlistId,
-              resourceId: youtube.ResourceId(
-                kind: 'youtube#video',
-                videoId: videoId,
+        if (searchResponse.items != null && searchResponse.items!.isNotEmpty) {
+          final videoId = searchResponse.items![0].id!.videoId!;
+
+          await youtubeApi.playlistItems.insert(
+            youtube.PlaylistItem(
+              snippet: youtube.PlaylistItemSnippet(
+                playlistId: playlistId,
+                resourceId: youtube.ResourceId(
+                  kind: 'youtube#video',
+                  videoId: videoId,
+                ),
               ),
             ),
-          ),
-          ['snippet'],
-        );
-        addedVideoIds.add(videoId);
+            ['snippet'],
+          );
+          addedVideoIds.add(videoId);
+        }
       } catch (e) {
         print('Error adding video: $e');
       }
