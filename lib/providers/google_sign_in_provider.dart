@@ -1,33 +1,20 @@
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:pli/services/google_sign_in_service.dart';
+
 
 class GoogleSignInProvider with ChangeNotifier {
-  GoogleSignIn? _googleSignIn;
+  final GoogleSignInService _googleSignInService = GoogleSignInService();
 
-  GoogleSignIn? get googleSignIn => _googleSignIn;
-
-  GoogleSignInAccount? _currentUser;
-
-  GoogleSignInAccount? get currentUser => _currentUser;
+  bool get isSignedIn => _googleSignInService.isSignedIn;
 
   Future<void> initializeGoogleSignIn() async {
-    _googleSignIn = GoogleSignIn(
-      clientId: '265826158341-ub9on6lru39fa0vakrf69ekg83j42jbc.apps.googleusercontent.com',
-      scopes: [
-        'email',
-        'https://www.googleapis.com/auth/youtube',
-      ],
-    );
-
-    await _googleSignIn!.signInSilently();
-    _currentUser = _googleSignIn!.currentUser;
+    await _googleSignInService.initializeGoogleSignIn();
     notifyListeners();
   }
 
   Future<void> handleSignIn() async {
     try {
-      await _googleSignIn!.signIn();
-      _currentUser = _googleSignIn!.currentUser;
+      await _googleSignInService.signIn();
       notifyListeners();
     } catch (error) {
       print(error);
@@ -35,8 +22,11 @@ class GoogleSignInProvider with ChangeNotifier {
   }
 
   Future<void> handleSignOut() async {
-    await _googleSignIn!.disconnect();
-    _currentUser = null;
+    await _googleSignInService.signOut();
     notifyListeners();
+  }
+
+  Future<String> getAccessToken() async {
+    return await _googleSignInService.getAccessToken();
   }
 }

@@ -258,6 +258,6 @@ fabric.properties
 !/gradle/wrapper/gradle-wrapper.jar
 
 # API keys
-lib/api_keys.dart
+lib/keys.dart
 
 # End of https://www.toptal.com/developers/gitignore/api/flutter,macos,androidstudio,dart

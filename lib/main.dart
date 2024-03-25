@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pli/providers/google_sign_in_provider.dart';
-import 'package:pli/login_page.dart';
+import 'package:pli/views/login.dart';
+
 
 void main() {
   runApp(
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       title: 'Your App',
-      home: LoginPage(),
+      home: Login(),
     );
   }
 }
